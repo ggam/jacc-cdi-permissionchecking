@@ -1,6 +1,5 @@
 package es.guillermogonzalezdeaguero.permissionchecking;
 
-import es.guillermogonzalezdeaguero.permissionchecking.api.EnablePermissionChecking;
 import es.guillermogonzalezdeaguero.permissionchecking.api.RequiredPermissions;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +12,6 @@ import javax.ejb.Stateless;
  * @author Guillermo González de Agüero
  */
 @Stateless
-@EnablePermissionChecking
 public class PostsRepository {
 
     private List<Post> posts;
@@ -33,11 +31,11 @@ public class PostsRepository {
                 findFirst();
     }
 
-    public void update(@RequiredPermissions("update") Post post) {
+    public void update(@RequiredPermissions(PostPermissions.UPDATE) Post post) {
         // Would propagate changes to the database here
     }
 
-    public void delete(@RequiredPermissions("delete") Post post) {
+    public void delete(@RequiredPermissions(PostPermissions.DELETE) Post post) {
         // Would propagate changes to the database here
     }
 }

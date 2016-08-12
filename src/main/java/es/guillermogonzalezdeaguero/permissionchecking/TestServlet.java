@@ -30,19 +30,19 @@ public class TestServlet extends HttpServlet {
         String action = req.getParameter("action");
 
         if (postId == null || action == null) {
-            throw new ServletException("Both parameters \"postId\" and \"action\" are mandatory");
+            throw new ServletException("Both \"postId\" and \"action\" parameters are mandatory");
         }
 
         Post post = postsRepository.findById(postId).get();
         switch (action) {
-            case "delete":
+            case PostPermissions.DELETE:
                 postsRepository.delete(post);
                 break;
-            case "update":
+            case PostPermissions.UPDATE:
                 postsRepository.update(post);
                 break;
             default:
-                throw new ServletException("Valid actions are \"delete\" and \"update\"");
+                throw new ServletException("Valid actions are \"" + PostPermissions.DELETE + "\" and \"" + PostPermissions.UPDATE + "\"");
         }
 
         resp.getWriter().println("Succesfully " + action + "d post #" + postId + " by user " + req.getUserPrincipal().getName() + "!!");

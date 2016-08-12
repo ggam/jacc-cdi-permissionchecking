@@ -27,10 +27,10 @@ public class PostPermissionChecker implements UserObjectPermissionChecker<Post> 
         }
 
         switch (permission.getActions()) {
-            case "delete":
+            case PostPermissions.DELETE:
                 // Only admins may delete posts
                 return false;
-            case "edit":
+            case PostPermissions.UPDATE:
                 Principal userPrincipal = httpRequest.getUserPrincipal();
                 if (userPrincipal != null && Objects.equals(userPrincipal.getName(), permission.getObject().getAuthor())) {
                     return true;
