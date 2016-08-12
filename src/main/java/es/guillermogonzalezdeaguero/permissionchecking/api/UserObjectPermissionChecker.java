@@ -7,7 +7,7 @@ import javax.enterprise.context.ApplicationScoped;
  * @author Guillermo González de Agüero
  */
 @ApplicationScoped
-public interface UserObjectPermissionChecker {
+public interface UserObjectPermissionChecker<T> {
 
-    boolean checkPermission(ObjectPermission permission);
+    boolean checkPermission(ObjectPermission<T> permission);
 }

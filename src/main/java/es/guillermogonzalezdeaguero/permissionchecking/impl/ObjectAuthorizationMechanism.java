@@ -2,48 +2,103 @@ package es.guillermogonzalezdeaguero.permissionchecking.impl;
 
 import es.guillermogonzalezdeaguero.permissionchecking.api.ObjectPermission;
 import es.guillermogonzalezdeaguero.permissionchecking.api.UserObjectPermissionChecker;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.security.Permission;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.Any;
+import javax.enterprise.inject.spi.Bean;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Inject;
-import org.omnifaces.jaccprovider.cdi.AuthorizationMechanism;
-import org.omnifaces.jaccprovider.jacc.Caller;
-import org.omnifaces.jaccprovider.jacc.SecurityConstraints;
 
 /**
  *
  * @author Guillermo González de Agüero
  */
 @ApplicationScoped
-public class ObjectAuthorizationMechanism implements AuthorizationMechanism {
+public class ObjectAuthorizationMechanism {
 
     @Inject
-    private Instance<UserObjectPermissionChecker> permissionCheckers;
+    private BeanManager beanManager;
 
-    @Override
-    public Boolean postAuthenticatePreAuthorize(Permission requestedPermission, Caller caller, SecurityConstraints securityConstraints) {
-        return doChecks(requestedPermission);
+    private Set<Bean<?>> checkerBeans;
+
+    @PostConstruct
+    private void init() {
+        Set<Bean<?>> beans = beanManager.getBeans(Object.class, new AnnotationLiteral<Any>() {
+        });
+
+        checkerBeans = new HashSet<>();
+        for (Bean<?> bean : beans) {
+            if (UserObjectPermissionChecker.class.isAssignableFrom(bean.getBeanClass())) {
+                checkerBeans.add(bean);
+            }
+        }
     }
 
-    @Override
-    public Boolean preAuthenticatePreAuthorize(Permission requestedPermission, SecurityConstraints securityConstraints) {
-        return doChecks(requestedPermission);
-    }
-
-    private Boolean doChecks(Permission requestedPermission) {
-        ObjectPermission ourPermission;
+    /**
+     * Returning Boolean object in order to be compatible with OmniFaces
+     * CDI-JACC current snapshot
+     *
+     * @param requestedPermission
+     * @return
+     */
+    public Boolean doChecks(Permission requestedPermission) {
+        ObjectPermission<?> ourPermission;
         if (!(requestedPermission instanceof ObjectPermission)) {
             return null;
         }
 
-        ourPermission = (ObjectPermission) requestedPermission;
+        ourPermission = (ObjectPermission<?>) requestedPermission;
 
-        for (UserObjectPermissionChecker permissionChecker : permissionCheckers) {
-            if (!permissionChecker.checkPermission(ourPermission)) {
-                return false;
+        Class<?> classToCheck = ourPermission.getObject().getClass();
+
+        Bean<?> beanValidador = null;
+        for (Bean<?> bean : checkerBeans) {
+            for (Type type : bean.getTypes()) {
+                if (type instanceof ParameterizedType) {
+                    ParameterizedType parameterized = (ParameterizedType) type;
+
+                    if (UserObjectPermissionChecker.class.getName().equals(parameterized.getRawType().getTypeName())) {
+                        String parameterClassName = parameterized.getActualTypeArguments()[0].getTypeName();
+
+                        // TODO: CHECK FOR NULL POINTERS!!
+                        // TODO: CHECK FOR INHERITANCE
+                        if (parameterClassName.equals(classToCheck.getName())) {
+                            beanValidador = bean;
+                        }
+                    }
+                }
             }
         }
 
+        if (beanValidador == null) {
+            throw new IllegalStateException("No checker available!!");
+        }
+
+        UserObjectPermissionChecker<?> reference = (UserObjectPermissionChecker<?>) beanManager.getReference(beanValidador, beanValidador.getBeanClass(), beanManager.createCreationalContext(beanValidador));
+        Method[] methods = reference.getClass().getMethods();
+        for (Method method : methods) {
+            if ("checkPermission".equals(method.getName())
+                    && method.getParameterCount() == 1
+                    && method.getParameterTypes()[0].isAssignableFrom(ourPermission.getClass())) {
+                try {
+                    if (!(boolean) method.invoke(reference, ourPermission)) {
+                        return false;
+                    }
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                    Logger.getLogger(ObjectAuthorizationMechanism.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
         return true;
     }
 

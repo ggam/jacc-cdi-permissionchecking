@@ -7,18 +7,18 @@ import java.util.Objects;
  *
  * @author Guillermo González de Agüero
  */
-public class ObjectPermission extends Permission {
+public class ObjectPermission<T> extends Permission {
 
-    private Object object;
+    private T object;
     private String permissionToCheck;
 
-    public ObjectPermission(Object object, String permissionToCheck) {
+    public ObjectPermission(T object, String permissionToCheck) {
         super(object.toString() + permissionToCheck);
         this.object = object;
         this.permissionToCheck = permissionToCheck;
     }
 
-    public Object getObject() {
+    public T getObject() {
         return object;
     }
 
