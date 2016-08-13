@@ -4,20 +4,18 @@ import es.guillermogonzalezdeaguero.permissionchecking.api.RequiredPermissions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.PostConstruct;
-import javax.ejb.Stateless;
+import javax.ejb.Singleton;
 
 /**
  *
  * @author Guillermo González de Agüero
  */
-@Stateless
+@Singleton
 public class PostsRepository {
 
-    private List<Post> posts;
+    private final List<Post> posts;
 
-    @PostConstruct
-    private void init() {
+    public PostsRepository() {
         posts = new ArrayList<>();
         posts.add(new Post(1, "someoneelse"));
         posts.add(new Post(2, "guillermo"));

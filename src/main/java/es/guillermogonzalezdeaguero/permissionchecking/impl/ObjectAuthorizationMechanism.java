@@ -37,11 +37,9 @@ public class ObjectAuthorizationMechanism {
         });
 
         checkerBeans = new HashSet<>();
-        for (Bean<?> bean : beans) {
-            if (UserObjectPermissionChecker.class.isAssignableFrom(bean.getBeanClass())) {
-                checkerBeans.add(bean);
-            }
-        }
+        beans.stream().
+                filter(bean -> UserObjectPermissionChecker.class.isAssignableFrom(bean.getBeanClass())).
+                forEach(checkerBeans::add);
     }
 
     /**
@@ -81,6 +79,7 @@ public class ObjectAuthorizationMechanism {
         }
 
         if (beanValidador == null) {
+            // TODO: Verify checkers availability at deployment time
             throw new IllegalStateException("No checker available!!");
         }
 

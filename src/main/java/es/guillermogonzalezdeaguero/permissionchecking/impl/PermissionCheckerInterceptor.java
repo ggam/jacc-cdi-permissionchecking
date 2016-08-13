@@ -1,6 +1,7 @@
 package es.guillermogonzalezdeaguero.permissionchecking.impl;
 
-import es.guillermogonzalezdeaguero.permissionchecking.api.EnablePermissionChecking;
+import es.guillermogonzalezdeaguero.permissionchecking.api.AuthorizationException;
+import es.guillermogonzalezdeaguero.permissionchecking.api.CheckPermissions;
 import es.guillermogonzalezdeaguero.permissionchecking.api.ObjectPermission;
 import es.guillermogonzalezdeaguero.permissionchecking.api.RequiredPermissions;
 import java.lang.reflect.Method;
@@ -18,7 +19,7 @@ import javax.interceptor.InvocationContext;
  */
 @Interceptor
 @Priority(APPLICATION)
-@EnablePermissionChecking
+@CheckPermissions
 public class PermissionCheckerInterceptor {
 
     @Inject
@@ -37,7 +38,7 @@ public class PermissionCheckerInterceptor {
                     // SHOULD USE JACC HERE
                     //if (Boolean.FALSE.equals(Policy.getPolicy().implies(new ProtectionDomain(null, null), new ObjectPermission(parameterValue, permissionToCheck)))) {
                     if (Boolean.FALSE.equals(authorizationMechanism.doChecks(new ObjectPermission(parameterValue, permissionToCheck)))) {
-                        throw new SecurityException("You are NOT allowed to do that");
+                        throw new AuthorizationException("You are NOT allowed to perform the requested action.");
                     }
                 }
             }

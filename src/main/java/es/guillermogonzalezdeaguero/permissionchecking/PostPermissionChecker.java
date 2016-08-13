@@ -36,7 +36,7 @@ public class PostPermissionChecker implements UserObjectPermissionChecker<Post> 
                     return true;
                 }
 
-                // More checks here: is the user a moderator of the category this post belongs to?
+                // Additional checks here: is the user a moderator of the category this post belongs to?
                 return false;
         }
 
