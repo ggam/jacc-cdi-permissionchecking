@@ -1,9 +1,9 @@
-package es.guillermogonzalezdeaguero.permissionchecking.impl;
+package es.guillermogonzalezdeaguero.permissionchecking.impl.permission;
 
 import es.guillermogonzalezdeaguero.permissionchecking.api.CheckPermissions;
 import es.guillermogonzalezdeaguero.permissionchecking.api.RequiredPermissions;
-import es.guillermogonzalezdeaguero.permissionchecking.impl.cdi.CheckedPermissionsAnnotatedMethod;
-import es.guillermogonzalezdeaguero.permissionchecking.impl.cdi.CheckedPermissionsAnnotatedType;
+import es.guillermogonzalezdeaguero.permissionchecking.impl.permission.cdi.CheckedPermissionsAnnotatedMethod;
+import es.guillermogonzalezdeaguero.permissionchecking.impl.permission.cdi.CheckedPermissionsAnnotatedType;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -36,6 +36,7 @@ public class PermissionCheckingExtension<X> implements Extension {
 
         // Only do the checks if class does not already has the interceptor binding
         for (AnnotatedMethod<? super X> method : annotatedType.getMethods()) {
+            boolean hasToBeAdded = true;
             if (!method.isAnnotationPresent(CheckPermissions.class)) {
                 for (AnnotatedParameter<? super X> parameter : method.getParameters()) {
                     if (parameter.getAnnotation(RequiredPermissions.class) != null) {
@@ -43,10 +44,14 @@ public class PermissionCheckingExtension<X> implements Extension {
                         newAnnotatedMethods.add(new CheckedPermissionsAnnotatedMethod<>(method));
 
                         LOGGER.log(Level.INFO, "Added PermissionChecking interceptor binding to {0}#{1}", new String[]{annotatedType.getJavaClass().getName(), method.getJavaMember().getName()});
-                    } else {
-                        newAnnotatedMethods.add(method);
+
+                        hasToBeAdded = false;
                     }
                 }
+            }
+
+            if (hasToBeAdded) {
+                newAnnotatedMethods.add(method);
             }
         }
 

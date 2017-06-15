@@ -1,4 +1,4 @@
-package es.guillermogonzalezdeaguero.permissionchecking.impl;
+package es.guillermogonzalezdeaguero.permissionchecking.impl.permission;
 
 import es.guillermogonzalezdeaguero.permissionchecking.api.ObjectPermission;
 import es.guillermogonzalezdeaguero.permissionchecking.api.UserObjectPermissionChecker;

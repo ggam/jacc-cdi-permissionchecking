@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.ejb.Singleton;
+import es.guillermogonzalezdeaguero.permissionchecking.api.Alowed;
 
 /**
  *
@@ -35,5 +36,10 @@ public class PostsRepository {
 
     public void delete(@RequiredPermissions(PostPermissions.DELETE) Post post) {
         // Would propagate changes to the database here
+    }
+
+    @Alowed("simpleEvaluator(arg0)")
+    public void customPermission(String result) {
+        System.out.println("Has needed");
     }
 }

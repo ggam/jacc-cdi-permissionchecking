@@ -1,6 +1,7 @@
 package es.guillermogonzalezdeaguero.permissionchecking;
 
 import es.guillermogonzalezdeaguero.permissionchecking.api.ObjectPermission;
+import es.guillermogonzalezdeaguero.permissionchecking.api.PermissionEvaluator;
 import es.guillermogonzalezdeaguero.permissionchecking.api.UserObjectPermissionChecker;
 import java.security.Principal;
 import java.util.Objects;
@@ -42,6 +43,11 @@ public class PostPermissionChecker implements UserObjectPermissionChecker<Post> 
 
         // In any other case, return false just to prevent security holes
         return false;
+    }
+
+    @PermissionEvaluator
+    public static boolean simpleEvaluator(String result) {
+        return Boolean.valueOf(result);
     }
 
 }

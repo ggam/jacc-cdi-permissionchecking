@@ -1,4 +1,4 @@
-package es.guillermogonzalezdeaguero.permissionchecking.impl.cdi;
+package es.guillermogonzalezdeaguero.permissionchecking.impl.permission.cdi;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;

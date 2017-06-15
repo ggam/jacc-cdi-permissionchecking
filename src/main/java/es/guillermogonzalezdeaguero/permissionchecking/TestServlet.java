@@ -4,8 +4,6 @@ import java.io.IOException;
 import javax.annotation.security.DeclareRoles;
 import javax.inject.Inject;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.HttpConstraint;
-import javax.servlet.annotation.ServletSecurity;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -17,8 +15,6 @@ import javax.servlet.http.HttpServletResponse;
  */
 @WebServlet("/test")
 @DeclareRoles("admin")
-@ServletSecurity(
-        @HttpConstraint(rolesAllowed = "**"))
 public class TestServlet extends HttpServlet {
 
     @Inject
@@ -26,6 +22,8 @@ public class TestServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        postsRepository.customPermission(req.getParameter("previewCheck"));
+
         Integer postId = req.getParameter("postId") != null ? Integer.valueOf(req.getParameter("postId")) : null;
         String action = req.getParameter("action");
 
