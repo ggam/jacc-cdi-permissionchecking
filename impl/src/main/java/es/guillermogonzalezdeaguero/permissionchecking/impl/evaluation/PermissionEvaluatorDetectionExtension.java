@@ -1,6 +1,7 @@
 package es.guillermogonzalezdeaguero.permissionchecking.impl.evaluation;
 
 import es.guillermogonzalezdeaguero.permissionchecking.api.PermissionEvaluator;
+import es.guillermogonzalezdeaguero.permissionchecking.impl.evaluation.engine.Engine;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -26,6 +27,8 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.util.AnnotationLiteral;
+import es.guillermogonzalezdeaguero.permissionchecking.api.Allowed;
+import es.guillermogonzalezdeaguero.permissionchecking.impl.evaluation.engine.InvalidExpressionException;
 
 /**
  *
@@ -37,15 +40,23 @@ public class PermissionEvaluatorDetectionExtension<X> implements Extension {
 
     private Map<String, Method> methodsMap = new HashMap<>();
 
+    private Set<String> expressionValues = new HashSet<>();
+
     public static class DefaultAnnotationLiteral extends AnnotationLiteral<Default> implements Default {
 
     }
 
     public <X> void processAnnotatedType(@Observes @WithAnnotations(PermissionEvaluator.class) ProcessAnnotatedType<X> pat) {
         Set<AnnotatedMethod<? super X>> methods = pat.getAnnotatedType().getMethods();
-        for (AnnotatedMethod<? super X> method : methods) {
-            if (method.isAnnotationPresent(PermissionEvaluator.class)) {
-                String methodName = method.getJavaMember().getName();
+        for (AnnotatedMethod<? super X> annotatedMethod : methods) {
+            if (annotatedMethod.isAnnotationPresent(PermissionEvaluator.class)) {
+                Method method = annotatedMethod.getJavaMember();
+                String methodName = method.getName();
+
+                if (!Boolean.class.isAssignableFrom(method.getReturnType()) && method.getReturnType() != boolean.class) {
+                    throw new DefinitionException("Methods for permission evaluation must return boolean: " + pat.getAnnotatedType().getJavaClass() + "#" + methodName);
+                }
+
                 boolean anyMatch = methodsMap.values().stream().map(Method::getName).anyMatch(methodName::equals);
                 if (anyMatch) {
                     throw new DefinitionException("Repeated method name for permission evaluator: " + methodName);
@@ -53,68 +64,90 @@ public class PermissionEvaluatorDetectionExtension<X> implements Extension {
 
                 LOGGER.log(Level.INFO, "Detected custom evaluator method: {0}#{1}", new String[]{pat.getAnnotatedType().getJavaClass().toString(), methodName});
 
-                methodsMap.put(methodName, method.getJavaMember());
+                methodsMap.put(methodName, method);
             }
         }
     }
 
-    public void addBean(@Observes AfterBeanDiscovery abd, BeanManager bm) {
-        abd.addBean(new Bean<CustomEvaluatorsBean>() {
-            @Override
-            public Class<?> getBeanClass() {
-                return CustomEvaluatorsBean.class;
+    public <X> void processAllowed(@Observes @WithAnnotations(Allowed.class) ProcessAnnotatedType<X> pat) {
+        pat.getAnnotatedType().
+                getMethods().
+                stream().
+                filter(am -> am.isAnnotationPresent(Allowed.class)).
+                map(am -> am.getAnnotation(Allowed.class)).
+                map(a -> a.value()).
+                peek(s -> LOGGER.log(Level.INFO, "Saving expression: {0}", s)).
+                forEach(expressionValues::add);
+    }
+
+    public void validateExpressions(@Observes AfterBeanDiscovery abd, BeanManager bm) {
+
+        Engine engine = new Engine(methodsMap.values());
+
+        try {
+            for (String expressionValue : expressionValues) {
+                engine.parseExpression(expressionValue);
             }
 
-            @Override
-            public Set<InjectionPoint> getInjectionPoints() {
-                return Collections.emptySet();
-            }
+            abd.addBean(new Bean<Engine>() {
+                @Override
+                public Class<?> getBeanClass() {
+                    return Engine.class;
+                }
 
-            @Override
-            public boolean isNullable() {
-                return false;
-            }
+                @Override
+                public Set<InjectionPoint> getInjectionPoints() {
+                    return Collections.emptySet();
+                }
 
-            @Override
-            public CustomEvaluatorsBean create(CreationalContext<CustomEvaluatorsBean> creationalContext) {
-                return new CustomEvaluatorsBean(methodsMap);
-            }
+                @Override
+                public boolean isNullable() {
+                    return false;
+                }
 
-            @Override
-            public void destroy(CustomEvaluatorsBean instance, CreationalContext<CustomEvaluatorsBean> creationalContext) {
-            }
+                @Override
+                public Engine create(CreationalContext<Engine> creationalContext) {
+                    return engine;
+                }
 
-            @Override
-            public Set<Type> getTypes() {
-                return new HashSet<>(Arrays.asList(CustomEvaluatorsBean.class, Object.class));
-            }
+                @Override
+                public void destroy(Engine instance, CreationalContext<Engine> creationalContext) {
+                }
 
-            @Override
-            public Set<Annotation> getQualifiers() {
-                return Collections.singleton((Annotation) new DefaultAnnotationLiteral());
-            }
+                @Override
+                public Set<Type> getTypes() {
+                    return new HashSet<>(Arrays.asList(Engine.class, Object.class));
+                }
 
-            @Override
-            public Class<? extends Annotation> getScope() {
-                return ApplicationScoped.class;
-            }
+                @Override
+                public Set<Annotation> getQualifiers() {
+                    return Collections.singleton((Annotation) new DefaultAnnotationLiteral());
+                }
 
-            @Override
-            public String getName() {
-                return null;
-            }
+                @Override
+                public Class<? extends Annotation> getScope() {
+                    return ApplicationScoped.class;
+                }
 
-            @Override
-            public Set<Class<? extends Annotation>> getStereotypes() {
-                return Collections.emptySet();
-            }
+                @Override
+                public String getName() {
+                    return null;
+                }
 
-            @Override
-            public boolean isAlternative() {
-                return false;
-            }
+                @Override
+                public Set<Class<? extends Annotation>> getStereotypes() {
+                    return Collections.emptySet();
+                }
 
-        });
-        LOGGER.info("Added CustomEvaluatorsBean");
+                @Override
+                public boolean isAlternative() {
+                    return false;
+                }
+
+            });
+            LOGGER.info("Added CustomEvaluator Engine");
+        } catch (InvalidExpressionException e) {
+            abd.addDefinitionError(e);
+        }
     }
 }

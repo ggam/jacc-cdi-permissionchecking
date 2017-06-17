@@ -46,7 +46,7 @@ public class PostPermissionChecker implements UserObjectPermissionChecker<Post> 
     }
 
     @PermissionEvaluator
-    public static boolean simpleEvaluator(String result) {
+    public boolean simpleEvaluator(String result) {
         return Boolean.valueOf(result);
     }
 

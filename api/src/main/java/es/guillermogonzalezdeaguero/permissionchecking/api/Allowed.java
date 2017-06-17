@@ -15,7 +15,7 @@ import javax.interceptor.InterceptorBinding;
 @InterceptorBinding
 @Retention(RUNTIME)
 @Target({METHOD, TYPE})
-public @interface Alowed {
+public @interface Allowed {
 
     @Nonbinding // TODO: check if needed
     String value();

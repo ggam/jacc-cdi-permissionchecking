@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.ejb.Singleton;
-import es.guillermogonzalezdeaguero.permissionchecking.api.Alowed;
+import es.guillermogonzalezdeaguero.permissionchecking.api.Allowed;
 
 /**
  *
@@ -38,7 +38,7 @@ public class PostsRepository {
         // Would propagate changes to the database here
     }
 
-    @Alowed("simpleEvaluator(arg0)")
+    @Allowed("simpleEvaluator(arg0)")
     public void customPermission(String result) {
         System.out.println("Has needed");
     }
