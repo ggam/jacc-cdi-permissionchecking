@@ -1,0 +1,7 @@
+es\guillermogonzalezdeaguero\permissionchecking\api\RequiredPermissions.class
+es\guillermogonzalezdeaguero\permissionchecking\api\CheckPermissions.class
+es\guillermogonzalezdeaguero\permissionchecking\api\PermissionEvaluator.class
+es\guillermogonzalezdeaguero\permissionchecking\api\AuthorizationException.class
+es\guillermogonzalezdeaguero\permissionchecking\api\ObjectPermission.class
+es\guillermogonzalezdeaguero\permissionchecking\api\Alowed.class
+es\guillermogonzalezdeaguero\permissionchecking\api\UserObjectPermissionChecker.class
